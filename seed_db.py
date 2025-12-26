@@ -6,7 +6,9 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@database-gem.c10ky8m4uyyz.us-east-2.rds.amazonaws.com/postgres"
+DB_ENDPOINT = os.getenv("DB_ENDPOINT")
+DB_NAME = os.getenv("DB_NAME")
+DB_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_ENDPOINT}/{DB_NAME}"
 
 
 Base = declarative_base()
