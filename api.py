@@ -7,7 +7,7 @@ from typing import List
 from urllib.parse import quote_plus
 import os
 
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 from sqlalchemy import create_engine, Column, BigInteger, Text, Integer, Index
@@ -199,6 +199,45 @@ async def get_top_words(request: TopWordsRequest, db: Session = Depends(get_db))
 
     return TopWordsResponse(
         gematria=request.gematria,
+        count=total_count,
+        words=[
+            GematriaResponse(
+                word=w.text,
+                normalized=w.normalized,
+                gematria=w.gematria
+            )
+            for w in words
+        ]
+    )
+
+@app.get("/gematria/top/{gematria}", response_model=TopWordsResponse, tags=["Gematria"])
+async def get_top_words_by_url(
+    gematria: int,
+    limit: int = Query(10, ge=1, le=100, description="Number of results to return (max 100)"),
+    db: Session = Depends(get_db)
+):
+    """
+    Get top N words with a specific gematria value (GET method).
+
+    - **gematria**: The gematria value to search for (in URL path)
+    - **limit**: Number of results to return (1-100, default 10) (in query parameter)
+
+    Example: /gematria/top/26?limit=5
+
+    Returns words ordered by creation date (most recent first).
+    """
+    words = db.query(GematriaWord).filter(
+        GematriaWord.gematria == gematria
+    ).order_by(
+        GematriaWord.created_at.desc()
+    ).limit(limit).all()
+
+    total_count = db.query(GematriaWord).filter(
+        GematriaWord.gematria == gematria
+    ).count()
+
+    return TopWordsResponse(
+        gematria=gematria,
         count=total_count,
         words=[
             GematriaResponse(
